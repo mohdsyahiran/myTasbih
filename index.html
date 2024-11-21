@@ -8,6 +8,10 @@
       content="https://saybat.top/myTasbih/tasbih.png"
     />
     <meta
+      property="og:description"
+      content="Kira selawat anda dengan myTasbih"
+    />
+    <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
@@ -104,12 +108,68 @@
         color: #555;
         font-size: 12px;
       }
-      #message {
-        font-size: 18px;
-        color: #27ae60;
-        margin-top: 20px;
-        text-align: center;
+
+      /* Custom Popup Style */
+      #popupModal {
         display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      #popupContent {
+        background-color: white;
+        padding: 30px;
+        text-align: center;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+      #popupContent h2 {
+        margin-bottom: 20px;
+        color: #27ae60;
+      }
+      #closePopup {
+        padding: 10px 20px;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #closePopup:active {
+        background-color: #c0392b;
+      }
+
+      .popup-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .popup-button {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .popup-button:hover {
+        background-color: #c0392b;
+      }
+
+      .popup-title {
+        color: #27ae60;
+        font-size: 24px;
+        margin-bottom: 20px;
       }
     </style>
   </head>
@@ -118,33 +178,57 @@
       <h1>Digital Tasbih</h1>
       <div id="counter">0</div>
       <div id="instructions">Tekan skrin untuk mula mengira</div>
-      <div id="message">Tahniah! Anda telah menekan 10 kali!</div>
-      <button id="whatsappBtn" onclick="shareOnWhatsApp()">
-        Share on WhatsApp
-      </button>
     </div>
     <button id="resetBtn">Semula</button>
     <footer>Developed by Syahiran 2024</footer>
+
+    <!-- Custom Popup -->
+    <div id="popupModal">
+      <div id="popupContent">
+        <div class="popup-title">Alhamdulillah, Selawat sudah 1000x 🙏🏻</div>
+        <button class="popup-button" id="closePopup">Tutup</button>
+        <button
+          class="popup-button"
+          id="whatsappBtn"
+          onclick="shareOnWhatsApp()"
+        >
+          Kongsikan di WhatsApp
+        </button>
+      </div>
+    </div>
+
     <script>
-      let count = 0;
+      let count = localStorage.getItem("count")
+        ? parseInt(localStorage.getItem("count"))
+        : 0; // Retrieve from localStorage or default to 0
+      let popupDisplayed = localStorage.getItem("popupDisplayed") === "true"; // Retrieve popup flag from localStorage
       const counter = document.getElementById("counter");
       const resetBtn = document.getElementById("resetBtn");
-      const message = document.getElementById("message");
+      const popupModal = document.getElementById("popupModal");
+      const closePopup = document.getElementById("closePopup");
       const whatsappBtn = document.getElementById("whatsappBtn");
 
       function updateCounter() {
         counter.textContent = count;
-        if (count >= 10) {
-          message.style.display = "block"; // Show the message
-          whatsappBtn.style.display = "inline-block"; // Show the WhatsApp button
+        localStorage.setItem("count", count); // Save the count to localStorage
+        if (count >= 1000 && !popupDisplayed) {
+          // Show the custom popup
+          popupModal.style.display = "flex";
+          // Show the WhatsApp button in the popup
+          whatsappBtn.style.display = "inline-block";
+          popupDisplayed = true; // Set the flag to true to prevent further popups
+          localStorage.setItem("popupDisplayed", "true"); // Save the popup flag to localStorage
         } else {
-          message.style.display = "none"; // Hide the message
-          whatsappBtn.style.display = "none"; // Hide the WhatsApp button
+          whatsappBtn.style.display = "none"; // Hide the WhatsApp button if count is less than 10
         }
       }
 
       document.body.addEventListener("click", (e) => {
-        if (e.target !== resetBtn && e.target !== whatsappBtn) {
+        if (
+          e.target !== resetBtn &&
+          e.target !== whatsappBtn &&
+          e.target !== closePopup
+        ) {
           count++;
           updateCounter();
         }
@@ -153,6 +237,9 @@
       resetBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         count = 0;
+        popupDisplayed = false; // Reset the flag on reset
+        localStorage.setItem("count", count); // Save reset count to localStorage
+        localStorage.setItem("popupDisplayed", "false"); // Reset the popup flag
         updateCounter();
       });
 
@@ -160,7 +247,11 @@
       document.body.addEventListener(
         "touchstart",
         (e) => {
-          if (e.target !== resetBtn && e.target !== whatsappBtn) {
+          if (
+            e.target !== resetBtn &&
+            e.target !== whatsappBtn &&
+            e.target !== closePopup
+          ) {
             e.preventDefault();
           }
         },
@@ -170,7 +261,11 @@
       document.body.addEventListener(
         "touchend",
         (e) => {
-          if (e.target !== resetBtn && e.target !== whatsappBtn) {
+          if (
+            e.target !== resetBtn &&
+            e.target !== whatsappBtn &&
+            e.target !== closePopup
+          ) {
             e.preventDefault();
             count++;
             updateCounter();
@@ -179,13 +274,24 @@
         { passive: false }
       );
 
+      // Close the custom popup when user clicks on the close button
+      closePopup.addEventListener("click", () => {
+        popupModal.style.display = "none";
+      });
+
       function shareOnWhatsApp() {
-        const messageToShare = `Saya telah menekan tasbih sebanyak ${count} kali!`;
+        const messageToShare = `Alhamdulillah, Saya telah berselawat sebanyak ${count} kali!`;
+        const linkToShare = "https://saybat.top/myTasbih";
+        const messageWithLink = `${messageToShare}\n\nGuna Tasbih Digital disini: ${linkToShare}`; // Adding newline before the link
+
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
-          messageToShare
+          messageWithLink
         )}`;
         window.open(whatsappUrl, "_blank");
       }
+
+      // Initialize the counter display based on localStorage value
+      updateCounter();
     </script>
   </body>
 </html>
